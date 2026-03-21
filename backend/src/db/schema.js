@@ -28,9 +28,10 @@ export const physicalIds = pgTable('physical_ids', {
   signed_token: text('signed_token').notNull().unique(),
   name: varchar('name', { length: 255 }).notNull(),
   course: varchar('course', { length: 255 }),
-  student_id: varchar('student_id', { length: 50 }),
+  student_id: varchar('student_id', { length: 50 }).unique(),
   expiry: varchar('expiry', { length: 50 }),
   created_at: timestamp('created_at').defaultNow(),
+  updated_at: timestamp('updated_at').defaultNow(),
 });
 
 export const verificationLogs = pgTable('verification_logs', {
@@ -39,5 +40,26 @@ export const verificationLogs = pgTable('verification_logs', {
   request_data: text('request_data'),
   result_status: varchar('result_status', { length: 50 }).notNull(), // PASS, FAIL, FLAG
   details: text('details'),
+  created_at: timestamp('created_at').defaultNow(),
+});
+export const userProfiles = pgTable('user_profiles', {
+  id: serial('id').primaryKey(),
+  user_id: text('user_id').notNull().unique(),
+  full_name: text('full_name'),
+  email: text('email'),
+  phone: text('phone'),
+  location: text('location'),
+  company: text('company'),
+  role: text('role'),
+  created_at: timestamp('created_at').defaultNow(),
+  updated_at: timestamp('updated_at').defaultNow(),
+});
+
+export const apiKeys = pgTable('api_keys', {
+  id: serial('id').primaryKey(),
+  user_id: text('user_id').notNull(),
+  key: varchar('key', { length: 255 }).notNull().unique(),
+  name: varchar('name', { length: 255 }).notNull(),
+  expires_at: timestamp('expires_at'),
   created_at: timestamp('created_at').defaultNow(),
 });

@@ -1,15 +1,17 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { authClient } from "@/lib/auth/client";
+import { BackButton } from "@/components/ui/BackButton";
 import styles from "./page.module.css";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/Card";
 import { ShieldAlert, ShieldCheck, Activity, Image as ImageIcon, FileText, FileBadge2, ArrowRight } from "lucide-react";
 
-const STATS = [
-  { label: "Total Operations", value: "24,892", icon: Activity, trend: "+12%" },
-  { label: "Fraud Stopped", value: "1,204", icon: ShieldAlert, trend: "+4%" },
-  { label: "Avg Trust Score", value: "82/100", icon: ShieldCheck, trend: "Stable" },
+const INITIAL_STATS = [
+  { id: "total", label: "Total Operations", value: "...", icon: Activity, trend: "Auto" },
+  { id: "fraud", label: "Fraud Stopped", value: "...", icon: ShieldAlert, trend: "Auto" },
+  { id: "trust", label: "Avg Trust Score", value: ".../100", icon: ShieldCheck, trend: "Stable" },
 ];
 
 const QUICK_ACCESS = [
@@ -19,20 +21,109 @@ const QUICK_ACCESS = [
   { id: "doc-watermark", label: "Watermark Check", desc: "Find alterations in documents", href: "/features/document-watermark", icon: FileBadge2, color: "var(--secondary)" },
 ];
 
-const RECENT = [
-  { id: "req_u98xa", type: "Refund Image", method: "AI Forensics", status: "FLAGGED", risk: "HIGH", time: "2m ago", icon: ImageIcon },
-  { id: "req_z09bc", type: "Degree Certificate", method: "Watermark", status: "VERIFIED", risk: "LOW", time: "14m ago", icon: FileBadge2 },
-  { id: "req_m12px", type: "Product Review", method: "Network Trust", status: "FLAGGED", risk: "HIGH", time: "1h ago", icon: FileText },
-  { id: "req_b76qk", type: "ID Verification", method: "QR Ground Truth", status: "VERIFIED", risk: "LOW", time: "2h ago", icon: ShieldCheck },
-];
+// Helper to format time diff
+function timeAgo(dateString: string) {
+  const diff = Date.now() - new Date(dateString).getTime();
+  if (Number.isNaN(diff)) return "just now";
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 60) return `${Math.max(1, minutes)}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+// Convert DB endpoint routing to UI format
+function formatDbLog(log: any) {
+  const isFraud = log.result_status === "FLAGGED" || log.result_status === "FLAG" || log.result_status === "FAIL";
+  let icon = Activity;
+  let type = "Verification";
+  let method = "API Check";
+
+  if (log.endpoint.includes("refund")) {
+    icon = ImageIcon;
+    type = "Refund Request";
+    method = "AI Forensics";
+  } else if (log.endpoint.includes("document")) {
+    icon = FileBadge2;
+    type = "Document Check";
+    method = "Watermark/Steganography";
+  } else if (log.endpoint.includes("review")) {
+    icon = FileText;
+    type = "Product Review";
+    method = "Network Trust";
+  } else if (log.endpoint.includes("id")) {
+    icon = ShieldCheck;
+    type = "ID Verification";
+    method = "QR Ground Truth";
+  }
+
+  return {
+    id: `req_${log.id}`,
+    type,
+    method,
+    status: isFraud ? "FLAGGED" : "VERIFIED",
+    risk: isFraud ? "HIGH" : "LOW",
+    time: log.created_at ? timeAgo(log.created_at) : "just now",
+    icon
+  };
+}
 
 export default function DashboardPage() {
+  const { data: session } = authClient.useSession();
+  const [profile, setProfile] = useState<any>(null);
+  const [stats, setStats] = useState(INITIAL_STATS);
+  const [recent, setRecent] = useState<any[]>([]);
+
+  const userName = profile?.full_name || session?.user?.name || "Partner";
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      // 1. Fetch profile
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/v1/profile/${session.user.id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setProfile(data.result);
+          }
+        })
+        .catch(err => console.error("Failed to fetch profile:", err));
+      
+      // 2. Fetch stats
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/v1/dashboard/stats`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.stats) {
+            setStats([
+              { id: "total", label: "Total Operations", value: data.stats.totalOperations.toLocaleString(), icon: Activity, trend: "+0%" },
+              { id: "fraud", label: "Fraud Stopped", value: data.stats.fraudStopped.toLocaleString(), icon: ShieldAlert, trend: "+0%" },
+              { id: "trust", label: "Avg Trust Score", value: `${data.stats.avgTrustScore}/100`, icon: ShieldCheck, trend: "Stable" },
+            ]);
+          }
+        })
+        .catch(err => console.error("Failed to fetch stats:", err));
+
+      // 3. Fetch recent
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/v1/dashboard/recent`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.result) {
+            setRecent(data.result.map(formatDbLog));
+          }
+        })
+        .catch(err => console.error("Failed to fetch recent records:", err));
+    }
+  }, [session]);
+
   return (
     <div className={styles.container}>
+      <div className="mb-4">
+        <BackButton />
+      </div>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Welcome back, Partner</h1>
-          <p className={styles.subtitle}>Here is your platform trust overview.</p>
+          <h1 className={styles.title}>Welcome back, {userName}</h1>
+          <p className={styles.subtitle}>{profile?.company ? `Overview for ${profile.company}` : "Here is your platform trust overview."}</p>
         </div>
         <div className={styles.globalScore}>
           <span>Network Health:</span>
@@ -42,7 +133,7 @@ export default function DashboardPage() {
 
       {/* Stats row */}
       <div className={styles.statsGrid}>
-        {STATS.map((stat, i) => {
+        {stats.map((stat, i) => {
           const Icon = stat.icon;
           return (
             <motion.div
@@ -132,16 +223,18 @@ export default function DashboardPage() {
           <Card glass>
             <h3 className={styles.cardTitle}>Recent Operations</h3>
             <div className={styles.recentList}>
-              {RECENT.map((item) => {
+              {recent.length === 0 ? (
+                <p style={{ color: "var(--muted-foreground)", fontSize: "0.9rem", padding: "1rem 0" }}>No recent operations found.</p>
+              ) : recent.map((item) => {
                 const Icon = item.icon;
                 return (
                   <div key={item.id} className={styles.recentItem}>
                     <div className={styles.recentIconWrapper}>
-                      <Icon size={20} className={item.risk === "HIGH" ? styles.destructive : styles.primary} />
+                      {Icon && <Icon size={20} className={item.risk === "HIGH" ? styles.destructive : styles.primary} />}
                     </div>
                     <div className={styles.recentDetails}>
                       <p className={styles.recentType}>{item.type}</p>
-                      <p className={styles.recentMethod}>vias {item.method} • {item.time}</p>
+                      <p className={styles.recentMethod}>via {item.method} • {item.time}</p>
                     </div>
                     <div className={cn(styles.recentStatus, item.status === "FLAGGED" ? styles.bgDestructive : styles.bgSuccess)}>
                       {item.status}

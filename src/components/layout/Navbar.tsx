@@ -102,8 +102,8 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Hide Navbar on dashboard and onboarding routes
-  if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/profile-setup")) {
+  // Hide Navbar on dashboard, settings, and onboarding routes
+  if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/account/settings") || pathname?.startsWith("/profile-setup")) {
     return null;
   }
 

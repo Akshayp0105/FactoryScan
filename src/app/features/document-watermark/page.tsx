@@ -12,29 +12,65 @@ export default function DocumentWatermarkPage() {
   const [mode, setMode] = useState<"issue" | "verify">("issue");
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [result, setResult] = useState<"success" | "fail" | null>(null);
+  const [result, setResult] = useState<any>(null); // changed to allow dynamic payload
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
     if (selected) {
       setFile(selected);
       setResult(null);
+      setDownloadUrl(null);
     }
   };
 
-  const processFile = () => {
+  const processFile = async () => {
     if (!file) return;
     setIsProcessing(true);
-    
-    setTimeout(() => {
-      setIsProcessing(false);
-      // Simulate validation failure randomly, but let's just show success for issue, and random for verify
+    setResult(null);
+    setDownloadUrl(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("document", file);
+
       if (mode === "issue") {
-        setResult("success");
+        formData.append("issuer_id", "demo-issuer-123");
+        formData.append("recipient_name", "John Doe");
+        formData.append("document_type", "Certificate");
+        
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/v1/document/watermark`, {
+          method: "POST",
+          body: formData,
+        });
+
+        if (response.ok) {
+           const blob = await response.blob();
+           const url = window.URL.createObjectURL(blob);
+           setDownloadUrl(url);
+           setResult({ success: true, mode: "issue", hash: "Hidden in image" });
+        } else {
+           setResult({ success: false, mode: "issue", error: "Failed to apply watermark" });
+        }
       } else {
-        setResult(Math.random() > 0.5 ? "success" : "fail");
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/v1/document/verify`, {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await response.json();
+        if (data.success) {
+           setResult({ success: true, mode: "verify", ...data.result });
+        } else {
+           setResult({ success: false, mode: "verify", error: data.error || "Verification failed" });
+        }
       }
-    }, 2000);
+    } catch (error) {
+      console.error("API error", error);
+      setResult({ success: false, mode, error: "Network error" });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -50,15 +86,15 @@ export default function DocumentWatermarkPage() {
       <div className={styles.tabs}>
         <button 
           className={mode === "issue" ? styles.tabActive : styles.tab} 
-          onClick={() => { setMode("issue"); setFile(null); setResult(null); }}
+          onClick={() => { setMode("issue"); setFile(null); setResult(null); setDownloadUrl(null); }}
         >
           <Lock size={18} /> Issue Document
         </button>
         <button 
           className={mode === "verify" ? styles.tabActive : styles.tab}
-          onClick={() => { setMode("verify"); setFile(null); setResult(null); }}
+          onClick={() => { setMode("verify"); setFile(null); setResult(null); setDownloadUrl(null); }}
         >
-          <Scan size={18} /> Verify Document
+          <Fingerprint size={18} /> Verify Document
         </button>
       </div>
 
@@ -74,7 +110,7 @@ export default function DocumentWatermarkPage() {
                 className={styles.inputState}
               >
                 <div className={styles.uploadBox}>
-                  {mode === "issue" ? <Lock size={40} className={styles.uploadIcon} /> : <Scan size={40} className={styles.uploadIcon} />}
+                  {mode === "issue" ? <Lock size={40} className={styles.uploadIcon} /> : <Fingerprint size={40} className={styles.uploadIcon} />}
                   <h3>{mode === "issue" ? "Upload to Embed Watermark" : "Upload to Verify Integrity"}</h3>
                   <p>Accepts PNG, JPG, or PDF (first page)</p>
                   
@@ -109,17 +145,33 @@ export default function DocumentWatermarkPage() {
                 className={styles.resultState}
               >
                 {mode === "issue" ? (
-                  <div className={styles.successResult}>
-                    <ShieldCheck size={64} className={styles.successIcon} />
-                    <h2>Document Secured</h2>
-                    <p>Cryptography embedded in DCT domain. Any AI regeneration or modification will destroy the invisible payload.</p>
-                    <div className={styles.payloadPreview}>
-                      <strong>Encoded Hash:</strong> <span>fc8X9p2mK1LqZ4y</span>
+                  result.success ? (
+                    <div className={styles.successResult}>
+                      <ShieldCheck size={64} className={styles.successIcon} />
+                      <h2>Document Secured</h2>
+                      <p>Cryptography embedded in DCT domain. Any AI regeneration or modification will destroy the invisible payload.</p>
+                      <div className={styles.payloadPreview}>
+                        <strong>Status:</strong> <span>{result.hash}</span>
+                      </div>
+                      <div style={{ display: "flex", gap: "10px", justifyContent: "center", marginTop: "1rem" }}>
+                        {downloadUrl && (
+                          <a href={downloadUrl} download={`secured_${file?.name}`}>
+                            <Button>Download Image</Button>
+                          </a>
+                        )}
+                        <Button variant="outline" onClick={() => { setFile(null); setResult(null); setDownloadUrl(null); }}>Issue Another</Button>
+                      </div>
                     </div>
-                    <Button onClick={() => { setFile(null); setResult(null); }}>Issue Another</Button>
-                  </div>
+                  ) : (
+                    <div className={styles.failResult}>
+                      <ShieldAlert size={64} className={styles.failIcon} />
+                      <h2>Issue Failed</h2>
+                      <p>{result.error}</p>
+                      <Button variant="outline" onClick={() => { setFile(null); setResult(null); }}>Try Again</Button>
+                    </div>
+                  )
                 ) : (
-                  result === "success" ? (
+                  result.verdict === "VERIFIED" ? (
                     <div className={styles.successResult}>
                       <ShieldCheck size={64} className={styles.successIcon} />
                       <h2>Verification Passed</h2>
@@ -128,15 +180,16 @@ export default function DocumentWatermarkPage() {
                         <li><ShieldCheck size={16}/> Cryptographic signature valid</li>
                         <li><ShieldCheck size={16}/> Document hash unchanged</li>
                         <li><ShieldCheck size={16}/> No AI regeneration detected</li>
+                        {result.document_data && <li><ShieldCheck size={16}/> Recipient: {result.document_data.recipient_name}</li>}
                       </ul>
-                      <Button onClick={() => { setFile(null); setResult(null); }}>Verify Another</Button>
+                      <Button onClick={() => { setFile(null); setResult(null); setDownloadUrl(null); }}>Verify Another</Button>
                     </div>
                   ) : (
                     <div className={styles.failResult}>
                       <ShieldAlert size={64} className={styles.failIcon} />
                       <h2>Tampering Detected</h2>
-                      <p>The spread-spectrum watermark is unreadable or heavily degraded. This document has been mathematically proven to be altered or AI-regenerated.</p>
-                      <Button variant="outline" onClick={() => { setFile(null); setResult(null); }}>Verify Another</Button>
+                      <p>{result.reason || "The spread-spectrum watermark is unreadable or heavily degraded. This document has been mathematically proven to be altered or AI-regenerated."}</p>
+                      <Button variant="outline" onClick={() => { setFile(null); setResult(null); setDownloadUrl(null); }}>Verify Another</Button>
                     </div>
                   )
                 )}

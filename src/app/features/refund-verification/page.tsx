@@ -33,24 +33,37 @@ export default function RefundVerificationPage() {
     }
   };
 
-  const simulateScan = () => {
+  const scanFile = async () => {
     if (!file) return;
     setIsScanning(true);
-    
-    // Simulate API delay
-    setTimeout(() => {
-      setIsScanning(false);
-      setResult({
-        overall_risk: "HIGH",
-        recommended_action: "DENY",
-        trust_score: 23,
-        signal_breakdown: {
-          ai_forensics: { result: "FAIL", confidence: 91, details: "GAN artifacts detected in texture patterns." },
-          exif_analysis: { result: "FAIL", flags: ["missing_camera", "no_gps"], details: "Metadata completely stripped." },
-          trust_score_check: { result: "FAIL", score: 23, prior_flags: 4, details: "Flagged on 3 partner networks previously." }
-        }
+    setResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      // Sending mock data for trust scoring
+      formData.append("email", "test@example.com");
+      formData.append("phone_number", "+1234567890");
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/v1/refund/verify`, {
+        method: "POST",
+        body: formData,
       });
-    }, 2500);
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setResult(data.result);
+      } else {
+        console.error("API error:", data.error);
+        setResult({ error: data.error || "Failed to scan image." });
+      }
+    } catch (error) {
+      console.error("Fetch error:", error);
+      setResult({ error: "Network error occurred." });
+    } finally {
+      setIsScanning(false);
+    }
   };
 
   return (
@@ -106,7 +119,7 @@ export default function RefundVerificationPage() {
             size="lg" 
             disabled={!file || isScanning} 
             isLoading={isScanning}
-            onClick={simulateScan}
+            onClick={scanFile}
             leftIcon={<ScanLine />}
           >
             {isScanning ? "Scanning Deep Forensics..." : "Run AI Verification"}

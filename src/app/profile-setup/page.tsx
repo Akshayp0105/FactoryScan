@@ -23,14 +23,26 @@ import { authClient } from "@/lib/auth/client";
 export default function ProfileSetupPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const { data: session, isPending } = authClient.useSession();
   const [formData, setFormData] = useState({
-    fullName: "Akshay P",
-    email: "akshay@factoryscan.io",
+    fullName: "",
+    email: "",
     phone: "",
     location: "",
     company: "",
     role: ""
   });
+
+  // Autofill from session when it loads
+  React.useEffect(() => {
+    if (session?.user) {
+      setFormData(prev => ({
+        ...prev,
+        fullName: prev.fullName || session.user.name || "",
+        email: prev.email || session.user.email || ""
+      }));
+    }
+  }, [session]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -38,16 +50,37 @@ export default function ProfileSetupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!session?.user?.id) return;
+    
     setLoading(true);
     try {
-      // Create organization using better-auth client
-      await authClient.organization.create({
-        name: formData.company,
-        slug: formData.company.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+      // 1. Create organization in Neon Auth (optional, keeps current logic)
+      if (formData.company) {
+        await authClient.organization.create({
+          name: formData.company,
+          slug: formData.company.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+        });
+      }
+
+      // 2. Save profile details to our backend
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/v1/profile`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: session.user.id,
+          ...formData
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error("Failed to save profile");
+      }
+
       router.push("/dashboard");
     } catch (error) {
-      console.error("Failed to create organization:", error);
+      console.error("Profile setup failed:", error);
     } finally {
       setLoading(false);
     }
