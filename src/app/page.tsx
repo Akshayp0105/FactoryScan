@@ -1,7 +1,7 @@
 "use client";
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import styles from "./page.module.css";
-import { motion } from "framer-motion";
+import { motion, useInView, useAnimationControls } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import {
@@ -12,6 +12,8 @@ import {
   ArrowRight,
   CheckCircle2,
   Zap,
+  AlertTriangle,
+  Ban,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -20,7 +22,61 @@ const fadeIn = {
   visible: { opacity: 1, y: 0 },
 };
 
+// Animated number counter hook
+function useCountUp(target: number, duration: number, trigger: boolean) {
+  const [count, setCount] = useState(100);
+  useEffect(() => {
+    if (!trigger) return;
+    const start = 100;
+    const diff = start - target;
+    const steps = Math.ceil(duration / 16);
+    let step = 0;
+    const timer = setInterval(() => {
+      step++;
+      setCount(Math.round(start - (diff * step) / steps));
+      if (step >= steps) clearInterval(timer);
+    }, 16);
+    return () => clearInterval(timer);
+  }, [trigger, target, duration]);
+  return count;
+}
+
+const TRUST_LEVELS = [
+  {
+    range: "80–100",
+    label: "Auto-Approve",
+    status: "success",
+    icon: CheckCircle2,
+    color: "#06b6d4",
+    desc: "Instant clearance. No friction.",
+  },
+  {
+    range: "50–79",
+    label: "Flag for Review",
+    status: "warning",
+    icon: AlertTriangle,
+    color: "#f59e0b",
+    desc: "Human review triggered.",
+  },
+  {
+    range: "0–49",
+    label: "Auto-Deny & Escalate",
+    status: "danger",
+    icon: Ban,
+    color: "#ef4444",
+    desc: "Transaction blocked network-wide.",
+  },
+];
+
 export default function Home() {
+  const trustRef = useRef(null);
+  const isInView = useInView(trustRef, { once: true, margin: "-100px" });
+  const score = 23;
+  const radius = 52;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (score / 100) * circumference;
+  const animatedScore = useCountUp(score, 1500, isInView);
+
   return (
     <div className={styles.container}>
       {/* Hero Section */}
@@ -82,7 +138,7 @@ export default function Home() {
           </motion.div>
         </motion.div>
 
-        {/* Floating UI Elements for Eye-Catching effect */}
+        {/* Floating UI Elements */}
         <div className={styles.floatingElements}>
             <motion.div 
                 className={styles.floatCard}
@@ -109,7 +165,7 @@ export default function Home() {
                 animate={{ y: [0, 10, 0] }}
                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
             >
-                <div className={styles.floatIcon} style={{ color: 'var(--success)' }}><CheckCircle2 size={18} /></div>
+                <div className={styles.floatIcon} style={{ color: '#10b981' }}><CheckCircle2 size={18} /></div>
                 <span>Trust Score: 98</span>
             </motion.div>
 
@@ -125,7 +181,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Trust Ticker / Logo Cloud */}
+      {/* Trust Ticker */}
       <section className={styles.tickerSection}>
          <div className={styles.tickerWrapper}>
             <div className={styles.tickerContent}>
@@ -137,7 +193,6 @@ export default function Home() {
                 <div className={styles.dot} />
                 <span>ZERO FALSE POSITIVES IN LAST 24H</span>
                 <div className={styles.dot} />
-                {/* Duplicate for seamless loop */}
                 <span>TRUSTED BY INDUSTRY LEADERS</span>
                 <div className={styles.dot} />
                 <span>SECURED OVER $400M IN TRANSACTIONS</span>
@@ -159,11 +214,8 @@ export default function Home() {
         </div>
 
         <div className={styles.featuresGrid}>
-          {/* Feature 1 */}
           <Card hoverEffect glowColor="var(--primary)">
-            <div className={styles.featureIcon}>
-              <Scan />
-            </div>
+            <div className={styles.featureIcon}><Scan /></div>
             <h3 className={styles.featureTitle}>Refund Image Verification</h3>
             <p className={styles.featureDesc}>
               Detect AI-generated product damage images used for fraudulent refunds. Scans for GAN artifacts, EXIF anomalies, and cross-platform history.
@@ -172,12 +224,8 @@ export default function Home() {
               Try Demo <ArrowRight size={16} />
             </Link>
           </Card>
-
-          {/* Feature 2 */}
           <Card hoverEffect glowColor="var(--secondary)">
-            <div className={styles.featureIcon}>
-              <Fingerprint />
-            </div>
+            <div className={styles.featureIcon}><Fingerprint /></div>
             <h3 className={styles.featureTitle}>Document Watermarking</h3>
             <p className={styles.featureDesc}>
               Invisible cryptographic fingerprints for digital certificates. AI regeneration destroys the watermark—providing mathematical proof of tampering.
@@ -186,12 +234,8 @@ export default function Home() {
               Try Demo <ArrowRight size={16} />
             </Link>
           </Card>
-
-          {/* Feature 3 */}
           <Card hoverEffect glowColor="var(--success)">
-            <div className={styles.featureIcon}>
-              <ShieldCheck />
-            </div>
+            <div className={styles.featureIcon}><ShieldCheck /></div>
             <h3 className={styles.featureTitle}>Physical ID Card Verification</h3>
             <p className={styles.featureDesc}>
               QR-code-based ground truth verification for photographed identity documents. Defeats AI inpainting tools by comparing OCR against signed data.
@@ -200,12 +244,8 @@ export default function Home() {
               Try Demo <ArrowRight size={16} />
             </Link>
           </Card>
-
-          {/* Feature 4 */}
           <Card hoverEffect glowColor="var(--destructive)">
-            <div className={styles.featureIcon}>
-              <MessageSquareWarning />
-            </div>
+            <div className={styles.featureIcon}><MessageSquareWarning /></div>
             <h3 className={styles.featureTitle}>Review Credibility</h3>
             <p className={styles.featureDesc}>
               Score product reviews for AI generation, spam rings, and prior fraud history to protect sellers and maintain marketplace integrity.
@@ -217,54 +257,165 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Partner Network / Trust Score Section */}
-      <section className={styles.trustSection}>
+      {/* === REDESIGNED: Unified Trust Score Section === */}
+      <section className={styles.trustSection} ref={trustRef}>
+        {/* Background glow blobs */}
+        <div className={styles.trustBg}>
+          <div className={styles.trustBlob1} />
+          <div className={styles.trustBlob2} />
+        </div>
+
         <div className={styles.trustContent}>
+          {/* LEFT: Text + Trust Levels */}
           <motion.div
-            initial={{ opacity: 0, x: -30 }}
+            initial={{ opacity: 0, x: -40 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
             className={styles.trustText}
           >
-            <h2>The Unified Trust Score</h2>
-            <p>
-              When a fraudster is flagged on one platform, their Trust Score degrades across the entire network. Gain enterprise-grade protection instantly through collective security intelligence.
+            <div className={styles.trustEyebrow}>Decentralized Intelligence</div>
+            <h2 className={styles.trustHeading}>The Unified<br /><span className={styles.trustGradientWord}>Trust Score</span></h2>
+            <p className={styles.trustDesc}>
+              When a fraudster is flagged on one platform, their Trust Score degrades across the <em>entire network</em>. Gain enterprise-grade protection through collective security intelligence.
             </p>
             <ul className={styles.trustList}>
-              <li>
-                <div className={styles.statusIndicator} data-status="success" />
-                <span><strong>80-100:</strong> Auto-Approve</span>
-              </li>
-              <li>
-                <div className={styles.statusIndicator} data-status="warning" />
-                <span><strong>50-79:</strong> Flag for Manual Review</span>
-              </li>
-              <li>
-                <div className={styles.statusIndicator} data-status="danger" />
-                <span><strong>0-49:</strong> Auto-Deny & Escalate</span>
-              </li>
+              {TRUST_LEVELS.map((level, i) => {
+                const Icon = level.icon;
+                return (
+                  <motion.li
+                    key={level.range}
+                    className={styles.trustLevelItem}
+                    style={{ "--level-color": level.color } as React.CSSProperties}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.2 + i * 0.15, duration: 0.5 }}
+                    whileHover={{ scale: 1.02, x: 4 }}
+                  >
+                    <div className={styles.trustLevelIcon}>
+                      <Icon size={16} />
+                    </div>
+                    <div className={styles.trustLevelText}>
+                      <span className={styles.trustLevelRange}>{level.range}</span>
+                      <span className={styles.trustLevelLabel}>{level.label}</span>
+                      <span className={styles.trustLevelDesc}>{level.desc}</span>
+                    </div>
+                    <div className={styles.trustLevelGlow} />
+                  </motion.li>
+                );
+              })}
             </ul>
           </motion.div>
-          
+
+          {/* RIGHT: Animated Score Visual */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            whileInView={{ opacity: 1, scale: 1, y: 0 }}
             viewport={{ once: true }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
             className={styles.trustVisual}
           >
             <div className={styles.mockScoreCard}>
+              {/* Terminal header */}
               <div className={styles.mockHeader}>
-                <ShieldCheck className={styles.mockIcon} />
-                <span>Network Evaluation</span>
-              </div>
-              <div className={styles.mockBody}>
-                <div className={styles.scoreCircle}>23</div>
-                <div className={styles.scoreDetails}>
-                  <h4>Overall Risk: <span className={styles.riskHigh}>CRITICAL</span></h4>
-                  <p>Prior flags across partner networks: 4</p>
-                  <div className={styles.actionDenied}>TRANSACTION BLOCKED</div>
+                <div className={styles.terminalDots}>
+                  <span className={styles.dotRed} />
+                  <span className={styles.dotYellow} />
+                  <span className={styles.dotGreen} />
+                </div>
+                <span className={styles.terminalTitle}>fs_network_eval.exe</span>
+                <div className={styles.headerPing}>
+                  <span className={styles.pingDot} />
+                  LIVE
                 </div>
               </div>
+
+              {/* Scanning overlay */}
+              <div className={styles.scanOverlay}>
+                <div className={styles.scanLine} />
+              </div>
+
+              {/* Score body */}
+              <div className={styles.mockBody}>
+                {/* SVG Ring */}
+                <div className={styles.svgRingWrapper}>
+                  <svg width="140" height="140" viewBox="0 0 140 140" className={styles.svgRing}>
+                    {/* Background ring */}
+                    <circle cx="70" cy="70" r={radius} fill="none" strokeWidth="8" stroke="rgba(255,255,255,0.06)" />
+                    {/* Animated danger ring */}
+                    <motion.circle
+                      cx="70" cy="70" r={radius} fill="none" strokeWidth="8"
+                      stroke="#ef4444"
+                      strokeLinecap="round"
+                      strokeDasharray={circumference}
+                      initial={{ strokeDashoffset: circumference }}
+                      animate={isInView ? { strokeDashoffset } : {}}
+                      transition={{ duration: 1.5, ease: "easeOut", delay: 0.3 }}
+                      style={{
+                        transform: "rotate(-90deg)",
+                        transformOrigin: "center",
+                        filter: "drop-shadow(0 0 8px #ef4444)",
+                      }}
+                    />
+                    {/* Glow ring */}
+                    <motion.circle
+                      cx="70" cy="70" r={radius} fill="none" strokeWidth="1"
+                      stroke="#ef4444"
+                      strokeLinecap="round"
+                      strokeDasharray={circumference}
+                      initial={{ strokeDashoffset: circumference }}
+                      animate={isInView ? { strokeDashoffset } : {}}
+                      transition={{ duration: 1.5, ease: "easeOut", delay: 0.3 }}
+                      style={{
+                        transform: "rotate(-90deg)",
+                        transformOrigin: "center",
+                        filter: "blur(4px)",
+                        opacity: 0.5,
+                      }}
+                    />
+                  </svg>
+                  {/* Animated counter */}
+                  <div className={styles.scoreInner}>
+                    <span className={styles.scoreValue}>{animatedScore}</span>
+                    <span className={styles.scoreSubtext}>/100</span>
+                  </div>
+                </div>
+
+                {/* Details */}
+                <div className={styles.scoreDetails}>
+                  <div className={styles.riskBadge}>
+                    <AlertTriangle size={14} />
+                    CRITICAL RISK
+                  </div>
+                  <h4 className={styles.scoreTitle}>Overall Risk</h4>
+                  <div className={styles.scoreMetrics}>
+                    <div className={styles.metricRow}>
+                      <span>Prior flags</span>
+                      <span className={styles.metricVal}>4 networks</span>
+                    </div>
+                    <div className={styles.metricRow}>
+                      <span>Pattern match</span>
+                      <span className={styles.metricVal}>94.2%</span>
+                    </div>
+                    <div className={styles.metricRow}>
+                      <span>Identity check</span>
+                      <span className={styles.metricValFail}>FAILED</span>
+                    </div>
+                  </div>
+                  <motion.div
+                    className={styles.actionDenied}
+                    animate={{ opacity: [1, 0.5, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    <Ban size={12} />
+                    TRANSACTION BLOCKED
+                  </motion.div>
+                </div>
+              </div>
+
+              {/* Holographic shimmer effect */}
+              <div className={styles.holographicSheen} />
             </div>
           </motion.div>
         </div>
@@ -272,3 +423,4 @@ export default function Home() {
     </div>
   );
 }
+

@@ -19,6 +19,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { BackButton } from "@/components/ui/BackButton";
 import { authClient } from "@/lib/auth/client";
+import { syncUserWithBackend } from "@/lib/userSync";
 
 export default function ProfileSetupPage() {
   const router = useRouter();
