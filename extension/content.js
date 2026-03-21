@@ -48,14 +48,18 @@ async function safeStorageGet(keys) {
 
 // Configurable selectors to support different types, focused on generic and Amazon specifically
 const selectors = [
-  // Amazon
+  // Amazon default & international variations
   { reviewList: 'div[data-hook="review"]', textBody: 'span[data-hook="review-body"]' },
+  { reviewList: 'div[id^="customer_review-"]', textBody: '.review-text-content' },
+  { reviewList: '.review', textBody: '.review-text, span[data-hook="review-body"]' },
+  { reviewList: '.a-section.review', textBody: '.a-expander-content' },
+  
   // Generic fallbacks
   { reviewList: '.review-container', textBody: '.review-text, .review-content' },
-  { reviewList: 'article[class*="review"]', textBody: 'p' },
-  { reviewList: 'div.review', textBody: 'p' },
-  // Alternative generic
-  { reviewList: '[data-testid="review-card"]', textBody: 'p' }
+  { reviewList: 'article[class*="review"]', textBody: 'p, .content' },
+  { reviewList: 'div[class*="ReviewCard"]', textBody: 'p, span' },
+  { reviewList: '.yotpo-review', textBody: '.content-review' },
+  { reviewList: '[data-testid="review-card"]', textBody: 'p, span' }
 ];
 
 function extractReviews() {
@@ -65,13 +69,21 @@ function extractReviews() {
     const nodes = document.querySelectorAll(sel.reviewList);
     if (nodes.length > 0) {
       nodes.forEach(node => {
-        // Only process reviews we haven't touched yet
-        if (node.dataset.reviewAnalyzed === "true" || node.dataset.reviewProcessing === "true") return;
+        if (node.dataset.reviewAnalyzed === "true" || node.dataset.reviewProcessing === "true") {
+          // If it was stuck in processing for whatever reason on an old run, clear it (failsafe)
+          if (node.dataset.reviewProcessing === "true" && !isAnalyzing) {
+             node.dataset.reviewProcessing = "false";
+             const stuckBadge = node.querySelector('.review-checker-badge.processing');
+             if (stuckBadge) stuckBadge.remove();
+          } else {
+             return;
+          }
+        }
         
         const textNode = node.querySelector(sel.textBody);
         if (textNode) {
           const text = textNode.textContent.trim();
-          if (text.length > 15) { // Minimum sanity threshold
+          if (text.length > 5) { // Lowered sanity threshold for very short reviews ("Great!")
             node.dataset.reviewProcessing = "true";
             reviews.push({ element: node, text: text, textNode: textNode });
             
