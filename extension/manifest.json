@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Review Authenticity Checker",
+  "version": "1.0",
+  "description": "Detects genuine vs spam/AI-generated product reviews.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "<all_urls>",
+    "https://generativelanguage.googleapis.com/"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}

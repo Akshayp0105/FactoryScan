@@ -18,10 +18,10 @@ router.post('/verify', upload.single('image'), async (req, res) => {
 
     const { email, phone_number } = req.body;
 
-    // 1. AI Detection
-    const aiResults = await detectAiGeneratedImage(req.file.buffer);
-    const aiScore = aiResults.find(r => r.label.toLowerCase() === 'ai' || r.label.toLowerCase() === 'artificial')?.score || 0;
-    const isAi = aiScore > 0.5;
+    // 1. AI Detection (using Gemini Forensics Pipeline)
+    const aiResults = await detectAiGeneratedImage(req.file.buffer, req.file.mimetype || 'image/jpeg');
+    const aiScore = Math.max(aiResults.artifact_score || 0, aiResults.classifier_score || 0);
+    const isAi = (aiResults.final_label || "").includes("AI") || aiScore > 0.5 || aiResults.metadata_detected;
 
     // 2. EXIF Analysis
     const exifResults = await analyzeExif(req.file.buffer);

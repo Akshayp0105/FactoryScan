@@ -6,7 +6,7 @@ import { extractQRCode } from '../utils/qrExtraction.js';
 import { db } from '../db/index.js';
 import { physicalIds, verificationLogs } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
-import Tesseract from 'tesseract.js';
+import { GoogleGenAI } from '@google/genai';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -98,28 +98,63 @@ router.post('/verify', upload.single('image'), async (req, res) => {
         });
     }
 
-    // 3. Perform Actual OCR via Tesseract
-    const { data: { text } } = await Tesseract.recognize(req.file.buffer, 'eng');
-    console.log("OCR Detected Text:", text); // Logging for debugging
+    // 3. Perform Actual OCR via Gemini
+    let extractedData = {};
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                inlineData: {
+                  data: req.file.buffer.toString("base64"),
+                  mimeType: req.file.mimetype || "image/jpeg"
+                }
+              },
+              { text: "Extract the details from this ID card image. Return ONLY a valid JSON object with the following keys: 'college_name', 'name', 'course', 'student_id', 'expiry'. If a field is not found or not applicable, set its value to an empty string. Only return the JSON object." }
+            ]
+          }
+        ],
+        config: {
+          responseMimeType: "application/json"
+        }
+      });
+      extractedData = JSON.parse(response.text || "{}");
+    } catch (apiError) {
+      console.error("Gemini OCR Error:", apiError);
+    }
     
-    // Simple mock heuristic for matching (you might want more robust regex searching!)
-    const ocrDetectedText = text.toLowerCase();
+    console.log("OCR Extracted Data:", extractedData); // Logging for debugging
     
-    // We try to find the ground truth anywhere in the scanned OCR text
-    const nameMatch = groundTruth.name && ocrDetectedText.includes(groundTruth.name.toLowerCase());
-    const courseMatch = groundTruth.course && ocrDetectedText.includes(groundTruth.course.toLowerCase());
-    const studentIdMatch = groundTruth.student_id && ocrDetectedText.includes(groundTruth.student_id.toLowerCase());
+    const normalize = (val) => (val || "").toString().toLowerCase().trim();
 
-    const ocrResultName = nameMatch ? groundTruth.name : (text.split('\n').slice(0, 3).join(' ') || "UNKNOWN");
-    const ocrResultCourse = courseMatch ? groundTruth.course : "UNKNOWN";
-    const ocrResultStudentId = studentIdMatch ? groundTruth.student_id : "UNKNOWN";
+    const ocrResultName = extractedData.name || "UNKNOWN";
+    const ocrResultCourse = extractedData.course || "UNKNOWN";
+    const ocrResultStudentId = extractedData.student_id || "UNKNOWN";
+    const ocrResultExpiry = extractedData.expiry || "UNKNOWN";
+    const ocrResultCollege = extractedData.college_name || "UNKNOWN";
+
+    const nameMatch = !!groundTruth.name && ocrResultName !== "UNKNOWN" && normalize(ocrResultName).includes(normalize(groundTruth.name));
+    const courseMatch = !!groundTruth.course && ocrResultCourse !== "UNKNOWN" && normalize(ocrResultCourse).includes(normalize(groundTruth.course));
+    const studentIdMatch = !!groundTruth.student_id && ocrResultStudentId !== "UNKNOWN" && normalize(ocrResultStudentId).includes(normalize(groundTruth.student_id));
+    const expiryMatch = !!groundTruth.expiry && ocrResultExpiry !== "UNKNOWN" && normalize(ocrResultExpiry).includes(normalize(groundTruth.expiry));
 
     // 4. Comparison
     const checks = [
+        { field: 'College Name', gt: 'N/A', ocr: ocrResultCollege, pass: true },
         { field: 'Full Name', gt: groundTruth.name, ocr: ocrResultName, pass: nameMatch },
         { field: 'Course', gt: groundTruth.course, ocr: ocrResultCourse, pass: courseMatch },
         { field: 'Student ID', gt: groundTruth.student_id, ocr: ocrResultStudentId, pass: studentIdMatch }
     ];
+
+    if (groundTruth.expiry) {
+        checks.push({ field: 'Expiry Date', gt: groundTruth.expiry, ocr: ocrResultExpiry, pass: expiryMatch });
+    } else {
+        checks.push({ field: 'Expiry Date', gt: 'N/A', ocr: ocrResultExpiry, pass: true });
+    }
 
     const tamperedFields = checks.filter(c => !c.pass);
     const isMockFraud = tamperedFields.length > 0;

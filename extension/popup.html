@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Review Checker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h2>Review Checker <span class="badge">AI</span></h2>
+    
+    <div class="api-key-section">
+      <label for="apiKey">Gemini API Key:</label>
+      <input type="password" id="apiKey" placeholder="AIzaSy...">
+      <div class="api-controls">
+        <button id="saveKey">Save Key</button>
+        <span id="keyStatus"></span>
+      </div>
+      <small class="tip">Required for highly accurate LLM analysis. Without it, defaults to basic heuristics.</small>
+    </div>
+
+    <hr>
+
+    <div class="stats-section">  
+      <div class="stat-box">
+        <span class="stat-label">Analyzed</span>
+        <span class="stat-value" id="totalReviews">0</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">Genuine</span>
+        <span class="stat-value genuine-text" id="genuineCount">0%</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">Spam</span>
+        <span class="stat-value spam-text" id="spamCount">0%</span>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="analyzeBtn" class="primary-btn">Analyze page reviews</button>
+      <label class="toggle-container">
+        <input type="checkbox" id="autoRun">
+        <span class="checkmark"></span>
+        Auto-run on page load
+      </label>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
