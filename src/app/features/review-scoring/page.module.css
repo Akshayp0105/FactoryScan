@@ -1,0 +1,288 @@
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.header {
+  text-align: center;
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.subtitle {
+  color: var(--muted-foreground);
+  font-size: 1.125rem;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.mainContent {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+@media (max-width: 900px) {
+  .mainContent {
+    grid-template-columns: 1fr;
+  }
+}
+
+.inputCol, .resultCol {
+  display: flex;
+  flex-direction: column;
+}
+
+.inputCard, .resultCard {
+  min-height: 480px;
+  display: flex;
+  flex-direction: column;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1rem;
+}
+
+.cardIcon {
+  color: var(--primary);
+}
+
+.cardHeader h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.formGroup label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  margin-bottom: 0.5rem;
+}
+
+.input, .textarea {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  color: var(--foreground);
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.textarea {
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.input:focus, .textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.actionBtn {
+  margin-top: auto;
+  width: 100%;
+}
+
+/* Result Side */
+.emptyState, .processingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  height: 100%;
+  flex: 1;
+  color: var(--muted-foreground);
+  gap: 1rem;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  border-left-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.resultData {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  height: 100%;
+}
+
+.scoreBanner {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  padding: 2rem;
+  border-radius: 0.75rem;
+}
+
+.scoreCircleWrapper {
+  position: relative;
+  width: 100px;
+  height: 100px;
+}
+
+.circularChart {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  max-height: 250px;
+}
+
+.circleBg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 2.5;
+}
+
+.circle {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  animation: progress 1s ease-out forwards;
+}
+
+.circleLow {
+  stroke: var(--destructive);
+}
+
+@keyframes progress {
+  0% { stroke-dasharray: 0 100; }
+}
+
+.scoreTextOverlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scoreNumber {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--destructive);
+}
+
+.scoreDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.scoreLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted-foreground);
+  letter-spacing: 0.05em;
+}
+
+.scoreDetails h2 {
+  font-size: 1.5rem;
+  color: var(--destructive);
+  margin-bottom: 0.5rem;
+}
+
+.recommendationBadge {
+  display: inline-block;
+  background: var(--destructive);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  align-self: flex-start;
+}
+
+.signalsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.signalCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.signalIconWrapper {
+  padding: 0.5rem;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 0.25rem;
+}
+
+.iconFail {
+  color: var(--destructive);
+}
+
+.signalContent {
+  flex: 1;
+}
+
+.signalContent h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.signalContent p {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  text-transform: capitalize;
+}
+
+.signalVerdict {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--destructive);
+  background: rgba(239, 68, 68, 0.15);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}

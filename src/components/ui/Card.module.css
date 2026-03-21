@@ -1,0 +1,49 @@
+.card {
+  border-radius: 1rem;
+  padding: 1px; /* for gradient border effect */
+  background: var(--card); /* fallback */
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.inner {
+  background: var(--card);
+  border-radius: calc(1rem - 1px);
+  padding: 1.5rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 2;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.glass .inner {
+  background: rgba(10, 10, 10, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.hoverEffect::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  transition: all 0.3s ease;
+}
+
+.hoverEffect:hover::before {
+  background: linear-gradient(135deg, var(--glow, var(--primary)), rgba(255,255,255,0.05));
+}

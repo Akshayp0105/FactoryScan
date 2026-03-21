@@ -1,0 +1,290 @@
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+.header {
+  text-align: center;
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.subtitle {
+  color: var(--muted-foreground);
+  font-size: 1.125rem;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.leftCol {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.uploadCard {
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.dropzone {
+  flex: 1;
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.dropzone:hover {
+  border-color: var(--primary);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.dropContext {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+}
+
+.dropIcon {
+  color: var(--muted-foreground);
+}
+
+.dropContext p {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.previewContainer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+.previewImage {
+  max-width: 100%;
+  max-height: 400px;
+  object-fit: contain;
+}
+
+.previewOverlay {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+}
+
+.scanBtn {
+  width: 100%;
+  height: 3.5rem;
+  font-size: 1.125rem;
+}
+
+.rightCol {
+  display: flex;
+  flex-direction: column;
+}
+
+.resultCard {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.emptyState, .scanningState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  height: 100%;
+  min-height: 400px;
+  color: var(--muted-foreground);
+}
+
+.emptyIcon {
+  margin-bottom: 1.5rem;
+  opacity: 0.3;
+}
+
+.scanLines {
+  width: 100%;
+  height: 100px;
+  position: relative;
+  margin-bottom: 2rem;
+  overflow: hidden;
+}
+
+.scanLine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--primary);
+  box-shadow: 0 0 10px var(--primary);
+  animation: scan 2s linear infinite;
+  opacity: 0;
+}
+
+@keyframes scan {
+  0% { top: 0; opacity: 1; }
+  80% { top: 100%; opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+.scanText {
+  color: var(--primary);
+  font-family: monospace;
+  animation: pulseOpacity 1s ease-in-out infinite alternate;
+}
+
+@keyframes pulseOpacity {
+  from { opacity: 0.5; }
+  to { opacity: 1; }
+}
+
+.resultData {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  height: 100%;
+}
+
+.resultHeader {
+  display: flex;
+  gap: 1rem;
+}
+
+.verdictBox, .scoreBox {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.verdictBox::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 3px;
+  background: var(--destructive);
+}
+
+.scoreBox::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 3px;
+  background: var(--destructive); /* because score is low */
+}
+
+.verdictLabel, .scoreLabel {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.verdictText, .scoreText {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--destructive);
+  margin: 0;
+}
+
+.signalsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.signalsTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.signalItem {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.signalHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.signalHeader h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  flex: 1;
+}
+
+.signalIconFail {
+  color: var(--destructive);
+  width: 18px;
+  height: 18px;
+}
+
+.signalBadgeFail {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--destructive);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.signalDesc {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  padding-left: calc(18px + 0.75rem);
+}
