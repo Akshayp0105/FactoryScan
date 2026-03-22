@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import styles from "./page.module.css";
 import { cn } from "@/lib/utils";
 import { BackButton } from "@/components/ui/BackButton";
@@ -9,10 +9,22 @@ import { FileBadge, Lock, Fingerprint, ShieldAlert, ShieldCheck } from "lucide-r
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function DocumentWatermarkPage() {
+  const resultRef = useRef<HTMLDivElement>(null);
+
   const [mode, setMode] = useState<"issue" | "verify">("issue");
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [result, setResult] = useState<any>(null); // changed to allow dynamic payload
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [result, setResult] = useState<any>(null);
+
+  useEffect(() => {
+    if (result && window.innerWidth <= 900) {
+      setTimeout(() => {
+        resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [result]);
+ // changed to allow dynamic payload
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,7 +93,9 @@ export default function DocumentWatermarkPage() {
 
   return (
     <div className={styles.container}>
-      <BackButton />
+      <div className={styles.backButtonWrapper}>
+        <BackButton />
+      </div>
       <div className={styles.header}>
         <h1 className={styles.title}>Document Watermarking & Verification</h1>
         <p className={styles.subtitle}>
@@ -209,7 +223,7 @@ export default function DocumentWatermarkPage() {
           <div className={styles.infoBlock}>
             <Fingerprint className={styles.infoIcon} />
             <h4>Why AI Destroys Watermarks</h4>
-            <p>Generative AI doesn't copy pixels; it creates completely new ones from scratch based on a distribution. This permanently destroys our invisible steganographic pattern.</p>
+            <p>Generative AI doesn&apos;t copy pixels; it creates completely new ones from scratch based on a distribution. This permanently destroys our invisible steganographic pattern.</p>
           </div>
           <div className={styles.infoBlock}>
             <FileBadge className={styles.infoIcon} />

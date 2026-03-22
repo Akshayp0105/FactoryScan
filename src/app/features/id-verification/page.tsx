@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import styles from "./page.module.css";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -16,6 +16,8 @@ const MOCK_RESULTS = [
 ];
 
 export default function IdVerificationPage() {
+  const resultRef = useRef<HTMLDivElement>(null);
+
   const [mode, setMode] = useState<"generate" | "verify">("verify");
   
   // Verification states
@@ -23,7 +25,17 @@ export default function IdVerificationPage() {
   const [preview, setPreview] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [resultReady, setResultReady] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [result, setResult] = useState<any>(null);
+
+  useEffect(() => {
+    if (result && window.innerWidth <= 900) {
+      setTimeout(() => {
+        resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [result]);
+
 
   // Generation states
   const [userIdData, setUserIdData] = useState({ name: "", course: "", student_id: "", expiry: "" });
@@ -105,7 +117,9 @@ export default function IdVerificationPage() {
 
   return (
     <div className={styles.container}>
-      <BackButton />
+      <div className={styles.backButtonWrapper}>
+        <BackButton />
+      </div>
       <div className={styles.header}>
         <h1 className={styles.title}>Physical ID Verification</h1>
         <p className={styles.subtitle}>
@@ -173,7 +187,7 @@ export default function IdVerificationPage() {
           </Button>
         </div>
 
-        <div className={styles.resultCol}>
+        <div className={styles.resultCol} ref={resultRef}>
           <Card glass className={styles.resultCard}>
             <AnimatePresence mode="wait">
               {!resultReady && !isScanning && (
@@ -240,7 +254,7 @@ export default function IdVerificationPage() {
                             <div>Status</div>
                           </div>
                           
-                          {result.all_checks.map((row: any, i: number) => (
+                          {result.all_checks.map((row: { field: string; gt: string; ocr: string; pass: boolean }, i: number) => (
                             <div key={i} className={styles.tableRow}>
                               <div className={styles.fieldLabel}>{row.field}</div>
                               <div className={styles.groundTruthText}>{row.gt}</div>

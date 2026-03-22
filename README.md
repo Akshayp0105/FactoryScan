@@ -65,6 +65,13 @@ Scores user reviews for authenticity using NLP and History Analysis.
 - **Signals**: AI Detection (sentence structure) → Spam Detection (coordinated patterns) → Reviewer Trust History.
 - **Endpoint**: `POST /api/v1/review/score`
 
+### 5. Extension API Bridge (Zero-Config Scanner)
+
+Dedicated proxy endpoint allowing the Factory Scan Chrome Extension to run deep Gemini-based reviews without distributing API keys to end-users.
+
+- **Flow**: Extract DOM Text → Batch Query Backend → Stream Classification Overlay.
+- **Endpoint**: `POST /api/v1/extension/classify`
+
 ---
 
 ## 🛠️ Maintenance & Theming Guide

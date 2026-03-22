@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import styles from "./page.module.css";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -9,12 +9,24 @@ import { cn } from "@/lib/utils";
 import { BackButton } from "@/components/ui/BackButton";
 
 export default function ReviewScoringPage() {
+  const resultRef = useRef<HTMLDivElement>(null);
+
   const [reviewText, setReviewText] = useState("This product is absolutely amazing! I have never seen anything like it before in my entire life, it works perfectly and everyone should buy it right now!");
   const [reviewerEmail, setReviewerEmail] = useState("test_reviewer@example.com");
   const [reviewerPhone, setReviewerPhone] = useState("+1987654321");
   const [platformId, setPlatformId] = useState("shop_123");
   const [isScoring, setIsScoring] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [result, setResult] = useState<any>(null);
+
+  useEffect(() => {
+    if (result && window.innerWidth <= 900) {
+      setTimeout(() => {
+        resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [result]);
+
 
   const handleScore = async () => {
     if (!reviewText.trim()) return;
@@ -53,7 +65,9 @@ export default function ReviewScoringPage() {
 
   return (
     <div className={styles.container}>
-      <BackButton />
+      <div className={styles.backButtonWrapper}>
+        <BackButton />
+      </div>
       <div className={styles.header}>
         <h1 className={styles.title}>Review Credibility Scoring</h1>
         <p className={styles.subtitle}>
@@ -124,7 +138,7 @@ export default function ReviewScoringPage() {
           </Card>
         </div>
 
-        <div className={styles.resultCol}>
+        <div className={styles.resultCol} ref={resultRef}>
           <Card glass className={styles.resultCard}>
             <AnimatePresence mode="wait">
               {!result && !isScoring && (

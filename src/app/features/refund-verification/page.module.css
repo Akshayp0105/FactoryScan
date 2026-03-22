@@ -348,3 +348,27 @@
 .inputField:focus {
   border-color: var(--primary);
 }
+
+
+.backButtonWrapper {
+  align-self: flex-start;
+  margin-bottom: -1rem;
+}
+
+
+@media (max-width: 480px) {
+  .container {
+    padding: 1.5rem 1rem;
+    gap: 1.5rem;
+  }
+  .title {
+    font-size: 1.75rem;
+  }
+  .mainContent {
+    gap: 1.5rem;
+  }
+  .actionBtn {
+    font-size: 1rem;
+    height: 3rem;
+  }
+}

@@ -1,3 +1,23 @@
+// Clean up previous instance of this script if the extension was reloaded 
+// without the page being refreshed. This prevents duplicate scripts from running.
+if (window.__FACTORY_SCAN_CLEANUP) {
+  window.__FACTORY_SCAN_CLEANUP();
+}
+
+let observer;
+let messageListener;
+
+window.__FACTORY_SCAN_CLEANUP = () => {
+  if (observer) observer.disconnect();
+  try {
+    if (messageListener && chrome.runtime?.onMessage) {
+      chrome.runtime.onMessage.removeListener(messageListener);
+    }
+  } catch (e) {
+    // Context might be dead already
+  }
+};
+
 // Inject our CSS styles natively into the DOM 
 const style = document.createElement('style');
 style.textContent = `
@@ -171,7 +191,7 @@ async function startAnalysis() {
 
 // Keep an eye on the DOM for dynamically loaded reviews
 let timeout = null;
-const observer = new MutationObserver(async () => {
+observer = new MutationObserver(async () => {
   const result = await safeStorageGet(['autoRun']);
   if (result && result.autoRun && !isAnalyzing) {
     clearTimeout(timeout);
@@ -184,7 +204,7 @@ const observer = new MutationObserver(async () => {
 observer.observe(document.body, { childList: true, subtree: true });
 
 // Listen for manual actions or status queries
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+messageListener = (message, sender, sendResponse) => {
   if (message.action === "ANALYZE_REVIEWS") {
     startAnalysis().then(response => {
       sendResponse(response || { status: 'ok', found: 1 });
@@ -193,7 +213,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   } else if (message.action === "GET_STATS") {
     sendResponse(stats);
   }
-});
+};
+
+chrome.runtime.onMessage.addListener(messageListener);
 
 // Initial auto-run if enabled
 safeStorageGet(['autoRun']).then((result) => {

@@ -1,22 +1,10 @@
 document.addEventListener('DOMContentLoaded', async () => {
-  const apiKeyInput = document.getElementById('apiKey');
-  const saveKeyBtn = document.getElementById('saveKey');
-  const keyStatus = document.getElementById('keyStatus');
   const analyzeBtn = document.getElementById('analyzeBtn');
   const autoRunToggle = document.getElementById('autoRun');
 
   // Load saved settings
-  chrome.storage.local.get(['geminiApiKey', 'autoRun'], (result) => {
-    if (result.geminiApiKey) apiKeyInput.value = result.geminiApiKey;
+  chrome.storage.local.get(['autoRun'], (result) => {
     if (result.autoRun) autoRunToggle.checked = result.autoRun;
-  });
-
-  // Save API Key
-  saveKeyBtn.addEventListener('click', () => {
-    chrome.storage.local.set({ geminiApiKey: apiKeyInput.value.trim() }, () => {
-      keyStatus.textContent = 'Saved!';
-      setTimeout(() => keyStatus.textContent = '', 2000);
-    });
   });
 
   // Save auto-run toggle

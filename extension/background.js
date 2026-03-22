@@ -27,113 +27,31 @@ function heuristicFallback(text) {
   };
 }
 
-// Fetch key from .env file or local storage
-async function getApiKey() {
-  return new Promise(async (resolve) => {
-    // Check .env first
-    try {
-      const res = await fetch(chrome.runtime.getURL('.env'));
-      let text = await res.text();
-      text = text.trim();
-      
-      const match = text.match(/GEMINI_API_KEY\s*=\s*(.*)/);
-      if (match) {
-        return resolve(match[1].trim().replace(/^['"]|['"]$/g, ''));
-      }
-      
-      // If it's just the raw key dumped in the file
-      if (text && text.startsWith('AIza')) {
-        return resolve(text);
-      }
-    } catch (e) {
-      // ignore
-    }
-
-    // Fallback to storage
-    chrome.storage.local.get(['geminiApiKey'], (result) => {
-      resolve(result.geminiApiKey);
-    });
-  });
-}
-
 // Memory cache to avoid repeating exact identical reviews
 const cache = new Map();
 
-async function classifyReviewsWithAPI(reviews, apiKey) {
-  const batchedPrompt = `Classify the following product reviews as either genuine or spam/AI-generated.
-Consider specificity, authenticity, emotional exaggeration, repetition, and realism.
-
-Respond ONLY in JSON format containing an array of objects for each review in order:
-[ { "label": "genuine" or "spam", "confidence": number between 0 and 1 } ]
-
-Reviews to classify:
-${reviews.map((r, i) => `Review ${i + 1}: ${r}`).join('\n\n')}`;
-
+// Helper to query our custom FactoryScan backend
+async function classifyReviewsWithBackend(reviews) {
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`, {
+    const response = await fetch('http://localhost:3002/api/v1/extension/classify', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: batchedPrompt }] }],
-        generationConfig: {
-          temperature: 0.3,
-          responseMimeType: "application/json"
-        }
-      })
+      body: JSON.stringify({ reviews })
     });
     
-    if (!response.ok) throw new Error("API Limit or Auth Error");
+    if (!response.ok) throw new Error("Backend API Error");
     
     const data = await response.json();
-    const content = data.candidates[0].content.parts[0].text;
-    
-    return JSON.parse(content);
+    return data.results;
   } catch (error) {
-    console.warn("Batch API failed, falling back.", error);
-    throw error;
+    console.warn("Backend route failed, using local heuristic fallback.", error);
+    return reviews.map(heuristicFallback);
   }
 }
 
-// Exact fallback using the specific prompt exactly as required by the instruction
-async function classifyReviewExact(review, apiKey) {
-  const exactPrompt = `Classify the following product review as either genuine or spam/AI-generated.
-Consider specificity, authenticity, emotional exaggeration, repetition, and realism.
-
-Review: ${review}
-
-Respond ONLY in JSON:
-{
-"label": "genuine" or "spam",
-"confidence": number between 0 and 1
-}`;
-
-  try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: exactPrompt }] }],
-        generationConfig: {
-          temperature: 0.3,
-          responseMimeType: "application/json"
-        }
-      })
-    });
-    
-    if (!response.ok) throw new Error("API Error");
-    
-    const data = await response.json();
-    const content = data.candidates[0].content.parts[0].text;
-    return JSON.parse(content);
-  } catch (err) {
-    console.warn("Exact AI fallback failed", err);
-    return heuristicFallback(review);
-  }
-}
+// Removed Direct Gemini Functions in favor of backend API
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "CLASSIFY_REVIEWS") {
@@ -144,7 +62,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 async function handleClassification(reviews) {
-  const apiKey = await getApiKey();
   const results = new Array(reviews.length).fill(null);
   const toProcess = [];
   const indices = [];
@@ -161,37 +78,25 @@ async function handleClassification(reviews) {
   }
 
   if (toProcess.length > 0) {
-    if (!apiKey) {
-      toProcess.forEach((r, idx) => {
-        const res = heuristicFallback(r);
-        results[indices[idx]] = res;
-        cache.set(r, res);
-      });
-    } else {
-      // Chunk processing to avoid huge payloads. Chunk limit: 5 config.
-      const BATCH_SIZE = 5;
-      for (let i = 0; i < toProcess.length; i += BATCH_SIZE) {
-        const chunk = toProcess.slice(i, i + BATCH_SIZE);
-        const chunkIndices = indices.slice(i, i + BATCH_SIZE);
-        
-        let batchResults;
-        
-        if (chunk.length > 1) {
-             try {
-               batchResults = await classifyReviewsWithAPI(chunk, apiKey);
-               if (!Array.isArray(batchResults) || batchResults.length !== chunk.length) {
-                 throw new Error("Batch response mismatch");
-               }
-             } catch (err) {
-               batchResults = await Promise.all(chunk.map(c => classifyReviewExact(c, apiKey)));
-             }
-        } else {
-             batchResults = [(await classifyReviewExact(chunk[0], apiKey))];
-        }
+    // Chunk processing to avoid huge payloads. Chunk limit: 10
+    const BATCH_SIZE = 10;
+    for (let i = 0; i < toProcess.length; i += BATCH_SIZE) {
+      const chunk = toProcess.slice(i, i + BATCH_SIZE);
+      const chunkIndices = indices.slice(i, i + BATCH_SIZE);
+      
+      const batchResults = await classifyReviewsWithBackend(chunk);
 
+      if (batchResults && Array.isArray(batchResults)) {
         batchResults.forEach((res, idx) => {
           results[chunkIndices[idx]] = res;
           cache.set(chunk[idx], res);
+        });
+      } else {
+        // Safe mapping
+        chunk.forEach((val, idx) => {
+           let fb = heuristicFallback(val);
+           results[chunkIndices[idx]] = fb;
+           cache.set(chunk[idx], fb);
         });
       }
     }

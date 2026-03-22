@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import styles from "./page.module.css";
 import { cn } from "@/lib/utils";
 import { BackButton } from "@/components/ui/BackButton";
@@ -9,10 +9,22 @@ import { UploadCloud, ScanLine, AlertTriangle, ShieldCheck, Image as ImageIcon, 
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function RefundVerificationPage() {
+  const resultRef = useRef<HTMLDivElement>(null);
+
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [result, setResult] = useState<any>(null);
+
+  useEffect(() => {
+    if (result && window.innerWidth <= 900) {
+      setTimeout(() => {
+        resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [result]);
+
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
 
@@ -73,7 +85,9 @@ export default function RefundVerificationPage() {
 
   return (
     <div className={styles.container}>
-      <BackButton />
+      <div className={styles.backButtonWrapper}>
+        <BackButton />
+      </div>
       <div className={styles.header}>
         <h1 className={styles.title}>Refund Image Verification</h1>
         <p className={styles.subtitle}>
