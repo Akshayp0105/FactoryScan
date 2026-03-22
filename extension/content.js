@@ -8,6 +8,9 @@ let observer;
 let messageListener;
 
 window.__FACTORY_SCAN_CLEANUP = () => {
+  const oldUI = document.getElementById('factory-scan-ui');
+  if (oldUI) oldUI.remove();
+  
   if (observer) observer.disconnect();
   try {
     if (messageListener && chrome.runtime?.onMessage) {
@@ -39,6 +42,50 @@ style.textContent = `
   .review-checker-badge.spam { background-color: #ef4444; }
   .review-checker-badge.processing { background-color: #6b7280; }
   .review-checker-badge.error { background-color: #f59e0b; }
+
+  #factory-scan-ui {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-family: system-ui, -apple-system, sans-serif;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+  #factory-scan-analyze-btn {
+    background: #6366f1;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  #factory-scan-analyze-btn:hover { background: #4f46e5; }
+  #factory-scan-analyze-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+
+  .fs-spinner {
+    width: 16px; height: 16px;
+    border: 2px solid #cbd5e1;
+    border-top-color: #6366f1;
+    border-radius: 50%;
+    animation: fs-spin 1s linear infinite;
+    display: none;
+  }
+  @keyframes fs-spin { to { transform: rotate(360deg); } }
+  .fs-analyzing .fs-spinner { display: inline-block; }
+  #factory-scan-status {
+    font-size: 13px;
+    color: #475569;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
 `;
 document.head.appendChild(style);
 
@@ -154,7 +201,61 @@ function updateBadge(element, label, confidence, error = false) {
   safeSendMessage({ action: "UPDATE_STATS", ...stats });
 }
 
+function injectUI() {
+  if (document.getElementById('factory-scan-ui')) return;
+  
+  let anchor = null;
+  for (let sel of selectors) {
+    const nodes = document.querySelectorAll(sel.reviewList);
+    if (nodes.length > 0) {
+      anchor = nodes[0];
+      break;
+    }
+  }
+  
+  if (!anchor || !anchor.parentNode) return;
+  
+  const ui = document.createElement('div');
+  ui.id = 'factory-scan-ui';
+  ui.innerHTML = `
+    <button id="factory-scan-analyze-btn">FactoryScan: Analyze Reviews</button>
+    <div id="factory-scan-status">
+      <div class="fs-spinner"></div>
+      <span class="fs-text">Ready to scan</span>
+    </div>
+  `;
+  
+  anchor.parentNode.insertBefore(ui, anchor);
+  
+  document.getElementById('factory-scan-analyze-btn').addEventListener('click', (e) => {
+    e.preventDefault();
+    startAnalysis();
+  });
+}
+
+function setUIStatus(state, msg) {
+  const ui = document.getElementById('factory-scan-ui');
+  if (!ui) return;
+  
+  const btn = document.getElementById('factory-scan-analyze-btn');
+  const text = ui.querySelector('.fs-text');
+  
+  if (state === 'analyzing') {
+    ui.classList.add('fs-analyzing');
+    btn.disabled = true;
+    btn.textContent = 'Analyzing...';
+    text.textContent = msg || 'Processing reviews...';
+  } else {
+    ui.classList.remove('fs-analyzing');
+    btn.disabled = false;
+    btn.textContent = 'FactoryScan: Analyze Reviews';
+    text.textContent = msg || 'Ready';
+  }
+}
+
 async function startAnalysis() {
+  injectUI();
+
   if (isAnalyzing) return { status: 'already_running' };
   isAnalyzing = true;
   
@@ -162,9 +263,12 @@ async function startAnalysis() {
   if (reviews.length === 0) {
     isAnalyzing = false;
     safeSendMessage({ action: "ANALYSIS_COMPLETE" });
+    setUIStatus('ready', 'No new reviews found to scan.');
     return { status: 'ok', found: 0 };
   }
   
+  setUIStatus('analyzing', `Analyzing ${reviews.length} reviews via AI...`);
+
   // Extract pure text array
   const reviewTexts = reviews.map(r => r.text);
   
@@ -173,6 +277,7 @@ async function startAnalysis() {
   
   isAnalyzing = false;
   safeSendMessage({ action: "ANALYSIS_COMPLETE" });
+  setUIStatus('ready', `Successfully analyzed ${reviews.length} reviews.`);
 
   if (response && response.results) {
     response.results.forEach((res, i) => {
@@ -192,6 +297,8 @@ async function startAnalysis() {
 // Keep an eye on the DOM for dynamically loaded reviews
 let timeout = null;
 observer = new MutationObserver(async () => {
+  injectUI();
+  
   const result = await safeStorageGet(['autoRun']);
   if (result && result.autoRun && !isAnalyzing) {
     clearTimeout(timeout);

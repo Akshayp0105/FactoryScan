@@ -104,7 +104,7 @@ export default function ProfileSetupPage() {
                <Sparkles size={32} />
             </div>
             <h1 className={styles.title}>Welcome to Factory Scan</h1>
-            <p className={styles.subtitle}>Let's complete your professional profile to get started.</p>
+            <p className={styles.subtitle}>Let&apos;s complete your professional profile to get started.</p>
           </div>
 
           <div className={styles.stepper}>

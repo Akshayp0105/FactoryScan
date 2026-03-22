@@ -72,7 +72,7 @@ export default function PluginPage() {
                     Protect Every <span className="text-gradient">Transaction</span> with One Plugin.
                 </h1>
                 <p className={styles.heroSubtitle}>
-                    Factory Scan embeds directly into your marketplace's existing workflows. 
+                    Factory Scan embeds directly into your marketplace&apos;s existing workflows. 
                     No invasive UI, just pure, AI-powered security intelligence.
                 </p>
                 <div className={styles.heroActions}>

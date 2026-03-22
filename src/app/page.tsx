@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import { Footer } from "@/components/layout/Footer";
+
 const fadeIn = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0 },
@@ -420,6 +422,133 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
+
+      {/* EXTENSION SECTION */}
+      <section className={styles.extSection}>
+        <div className={styles.extContainer}>
+          <motion.div 
+            className={styles.extTextContent}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+          >
+            <h2>Factory-Scan <br/><span className={styles.extHighlight}>Anywhere You Browse</span></h2>
+            <p className={styles.extDesc}>
+              Stop manually checking reviews. Install our secure extension to automatically classify reviews and detect suspicious patterns on any storefront.
+            </p>
+
+            <div className={styles.extSteps}>
+              <div className={styles.extStep}>
+                <div className={styles.extStepNumber}>1</div>
+                <div className={styles.extStepText}>
+                  <h4>Download & Extract</h4>
+                  <p>Download the latest release and extract it to a local folder.</p>
+                </div>
+              </div>
+              <div className={styles.extStep}>
+                <div className={styles.extStepNumber}>2</div>
+                <div className={styles.extStepText}>
+                  <h4>Activate Developer Mode</h4>
+                  <p>Go to <code>chrome://extensions</code> and toggle Developer mode on.</p>
+                </div>
+              </div>
+              <div className={styles.extStep}>
+                <div className={styles.extStepNumber}>3</div>
+                <div className={styles.extStepText}>
+                  <h4>Load Unpacked</h4>
+                  <p>Click &quot;Load unpacked&quot; and select your extracted folder.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.extDownloadBtnWrapper}>
+              <div className={styles.pulseGlow}></div>
+              <motion.a 
+                href="/extension.zip"
+                download
+                className={styles.extDownloadBtn}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Zap size={22} fill="currentColor" /> 
+                Get the Extension
+              </motion.a>
+            </div>
+          </motion.div>
+
+          {/* VISUAL MOCKUP */}
+          <motion.div 
+            className={styles.extVisual}
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            <div className={styles.extBrowserMockup}>
+              {/* Browser Header */}
+              <div className={styles.extBrowserHeader}>
+                <div className={styles.extBrowserDot}/>
+                <div className={styles.extBrowserDot}/>
+                <div className={styles.extBrowserDot}/>
+                <div className={styles.extBrowserAddress}>https://examplestore.com/product</div>
+              </div>
+
+              {/* Browser Content */}
+              <div className={styles.extBrowserBody}>
+                
+                {/* Fake Review 1 */}
+                <div className={styles.extFakeReview}>
+                  <div className={styles.extScanBadge}>
+                    <AlertTriangle size={12} strokeWidth={3} />
+                    AI GENERATED
+                  </div>
+                  <div className={styles.extReviewHeader}>
+                    <span>&quot;Amazing product, changed my life...&quot;</span>
+                    <span className={styles.extReviewStars}>★★★★★</span>
+                  </div>
+                  <div className={styles.extReviewBars}>
+                    <div className={styles.extBar}></div>
+                    <div className={`${styles.extBar} ${styles.medium}`}></div>
+                  </div>
+                </div>
+
+                {/* Fake Review 2 */}
+                <div className={styles.extFakeReview}>
+                  <div className={`${styles.extScanBadge} ${styles.genuine}`}>
+                    <CheckCircle2 size={12} strokeWidth={3} />
+                    GENUINE
+                  </div>
+                  <div className={styles.extReviewHeader}>
+                    <span>&quot;Works as expected, shipping was...&quot;</span>
+                    <span className={styles.extReviewStars}>★★★★☆</span>
+                  </div>
+                  <div className={styles.extReviewBars}>
+                    <div className={`${styles.extBar} ${styles.short}`}></div>
+                    <div className={styles.extBar}></div>
+                  </div>
+                </div>
+
+                {/* Scanner Beam Animation */}
+                <motion.div 
+                  className={styles.extScannerBeam}
+                  animate={{
+                    y: [0, 200, 0],
+                    opacity: [0, 1, 1, 0]
+                  }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: "linear"
+                  }}
+                />
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+      
+      
     </div>
   );
 }

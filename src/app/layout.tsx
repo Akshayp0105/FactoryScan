@@ -4,6 +4,7 @@ import './globals.css';
 import { authClient } from '@/lib/auth/client';
 import { NeonAuthUIProvider } from '@neondatabase/auth/react';
 import { Navbar } from '@/components/layout/Navbar';
+import { Footer } from '@/components/layout/Footer';
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -34,6 +35,7 @@ export default function RootLayout({
           <main className="app-main">
             {children}
           </main>
+          <Footer />
         </NeonAuthUIProvider>
       </body>
     </html>
