@@ -36,7 +36,7 @@ function timeAgo(dateString: string) {
 }
 
 // Convert DB endpoint routing to UI format
-function formatDbLog(log: Record<string, unknown>) {
+function formatDbLog(log: any) {
   const isFraud = log.result_status === "FLAGGED" || log.result_status === "FLAG" || log.result_status === "FAIL";
   let icon = Activity;
   let type = "Verification";
