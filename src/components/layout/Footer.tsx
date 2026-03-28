@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { ShieldCheck, Twitter, Github, Linkedin, ArrowUpRight } from "lucide-react";
 import styles from "./Footer.module.css";
-import { motion } from "framer-motion";
 
 export const Footer = () => {
   const pathname = usePathname();
@@ -19,8 +18,10 @@ export const Footer = () => {
           {/* Brand Column */}
           <div className={styles.brand}>
             <Link href="/" className={styles.logo}>
-              <ShieldCheck color="var(--primary)" size={24} />
-              Factory-Scan
+              <div className={styles.logoIconWrapper}>
+                <ShieldCheck size={20} />
+              </div>
+              Factory Scan
             </Link>
             <p className={styles.bio}>
               Enterprise-grade AI fraud prevention, review classification, and document verification protecting the next generation of commerce.

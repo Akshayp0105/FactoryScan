@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon src/server.js",
+    "build": "echo 'No build needed'",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push"
   },
