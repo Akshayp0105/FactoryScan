@@ -136,3 +136,4 @@ To ensure Factory Scan remains a first-class fraud prevention tool, all future d
 2.  **Backend**: `cd backend && npm install && node src/server.js`
 
 _Factory Scan · v1.0 · Protect the Digital Truth · 2026_
+
