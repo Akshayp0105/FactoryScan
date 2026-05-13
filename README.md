@@ -4,6 +4,7 @@
 > **AI-Powered Fraud Prevention & Document Verification**  
 > v1.0 · Product Release · March 2026
 
+
 Factory Scan is a multi-dimensional fraud prevention platform and document verification suite designed to protect eCommerce, ed-tech, and digital services from AI-assisted deception. By leveraging advanced forensics, cryptographic watermarking, and a shared **Unified Trust Score**, we provide a cross-platform credibility index that identifies malicious actors before they strike.
 
 ---
