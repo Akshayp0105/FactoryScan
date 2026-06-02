@@ -1,4 +1,4 @@
-# Factory Scan — Unified Trust & Fraud Prevention Ecosystem
+## Factory Scan — Unified Trust & Fraud Prevention Ecosystem
 
 > **AI-Powered Fraud Prevention & Document Verification** 
 
